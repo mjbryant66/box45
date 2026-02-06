@@ -11,9 +11,9 @@ const CODES = {
 
 function RadioGroup({ label, value, onChange, options }) {
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 22 }}>
       <div style={{
-        fontSize: 13, fontWeight: 600, color: "#475569",
+        fontSize: 14, fontWeight: 600, color: "#475569",
         textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10,
       }}>
         {label}
@@ -30,7 +30,7 @@ function RadioGroup({ label, value, onChange, options }) {
                 border: selected ? "2px solid #b91c1c" : "2px solid #e2e8f0",
                 background: selected ? "#fef2f2" : "#fff",
                 color: selected ? "#b91c1c" : "#64748b",
-                fontWeight: selected ? 700 : 500, fontSize: 15,
+                fontWeight: selected ? 700 : 500, fontSize: 17,
                 cursor: "pointer", transition: "all 0.15s ease",
                 fontFamily: "inherit",
               }}
@@ -60,10 +60,19 @@ function FadeIn({ children, delay = 0 }) {
   );
 }
 
-function MapleLeaf({ size = 18, color = "#b91c1c" }) {
+function MapleLeaf({ size = 20, color = "#b91c1c" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 38" style={{ display: "inline-block", verticalAlign: "middle" }}>
-      <path fill={color} d="M20,2 L22,10 L28,6 L25,12 L32,13 L26.5,16.5 L30,22 L24,19 L25,28 L20,24 L15,28 L16,19 L10,22 L13.5,16.5 L8,13 L15,12 L12,6 L18,10 Z M17,28 L17,36 L23,36 L23,28"/>
+    <svg width={size} height={size} viewBox="-2015 -2000 4030 4030" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path fill={color} d="m-90 2030 45-863a95 95 0 0 0-111-98l-859 151 116-320a65 65 0 0 0-20-73l-941-762 212-99a65 65 0 0 0 34-79l-186-572 542 115a65 65 0 0 0 73-38l105-247 423 454a65 65 0 0 0 111-57l-204-1052 327 189a65 65 0 0 0 91-27l332-652 332 652a65 65 0 0 0 91 27l327-189-204 1052a65 65 0 0 0 111 57l423-454 105 247a65 65 0 0 0 73 38l542-115-186 572a65 65 0 0 0 34 79l212 99-941 762a65 65 0 0 0-20 73l116 320-859-151a95 95 0 0 0-111 98l45 863z"/>
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <circle cx="12" cy="12" r="10" stroke="#ffffff" strokeWidth="2"/>
+      <polyline points="12,6 12,12 16,14" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -128,23 +137,23 @@ function DeadlineBanner() {
       animation: isUrgent ? "pulse 2s ease-in-out infinite" : "none",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 20 }}>⏰</span>
+        <ClockIcon />
         <div style={{ textAlign: "center", flex: 1, minWidth: 200 }}>
           {isPastDeadline ? (
             <>
-              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Trebuchet MS', sans-serif", marginBottom: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Trebuchet MS', sans-serif", marginBottom: 4 }}>
                 T4 DEADLINE PASSED — LATE FILINGS ACCEPTED
               </div>
-              <div style={{ fontSize: 12, opacity: 0.95 }}>
+              <div style={{ fontSize: 13, opacity: 0.95 }}>
                 File now to minimize penalties • Instant compliance memo
               </div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Trebuchet MS', sans-serif", marginBottom: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Trebuchet MS', sans-serif", marginBottom: 4 }}>
                 T4 FILING DEADLINE: FEBRUARY {now.getFullYear() % 4 === 0 ? '29' : '28'}, {now.getFullYear()}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.5px" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.5px" }}>
                 {timeLeft.days > 0 && `${timeLeft.days} day${timeLeft.days !== 1 ? 's' : ''}`}
                 {timeLeft.days > 0 && timeLeft.hours > 0 && ', '}
                 {timeLeft.hours > 0 && `${timeLeft.hours} hour${timeLeft.hours !== 1 ? 's' : ''}`}
@@ -152,14 +161,14 @@ function DeadlineBanner() {
                 {' remaining'}
               </div>
               {isUrgent && (
-                <div style={{ fontSize: 11, marginTop: 6, opacity: 0.95 }}>
-                  🚨 Last minute? Get your code instantly + audit-ready documentation
+                <div style={{ fontSize: 12, marginTop: 6, opacity: 0.95 }}>
+                  Last minute? Get your code instantly + audit-ready documentation
                 </div>
               )}
             </>
           )}
         </div>
-        <MapleLeaf size={20} color="#ffffff" />
+        <MapleLeaf size={22} color="#ffffff" />
       </div>
       <style>{`
         @keyframes pulse {
@@ -314,20 +323,20 @@ export default function T4Calculator() {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               background: "#b91c1c", color: "#fff", padding: "6px 16px",
-              borderRadius: 6, fontSize: 12, fontWeight: 700,
+              borderRadius: 6, fontSize: 13, fontWeight: 700,
               letterSpacing: "0.1em", textTransform: "uppercase",
               fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
               marginBottom: 16,
             }}>
-              <MapleLeaf size={14} color="#ffffff" /> CRA Compliance Tool
+              <MapleLeaf size={16} color="#ffffff" /> CRA Compliance Tool
             </div>
             <h1 style={{
-              fontSize: 28, fontWeight: 700, color: "#1c1917",
+              fontSize: 32, fontWeight: 700, color: "#0f0e0d",
               margin: "0 0 8px 0", lineHeight: 1.2,
             }}>
               T4 Box 45 Calculator
             </h1>
-            <p style={{ fontSize: 15, color: "#78716c", margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 17, color: "#57534e", margin: 0, lineHeight: 1.5 }}>
               Determine the correct dental benefits code for your T4 filings
             </p>
           </div>
@@ -342,14 +351,14 @@ export default function T4Calculator() {
           borderRadius: 10, padding: "14px 18px", marginBottom: 24,
           display: "flex", gap: 12, alignItems: "flex-start",
         }}>
-          <span style={{ fontSize: 18, lineHeight: 1.2, flexShrink: 0 }}>ℹ️</span>
+          <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>ℹ️</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#1e3a5f", marginBottom: 2,
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#1e3a5f", marginBottom: 2,
               fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
             }}>
               Important Note
             </div>
-            <div style={{ fontSize: 13, color: "#1e40af", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 14, color: "#1e40af", lineHeight: 1.5 }}>
               Report based on <strong>eligibility</strong> as of December 31, 2025 — not whether benefits were actually used.
             </div>
           </div>
@@ -366,7 +375,7 @@ export default function T4Calculator() {
               {/* Employer Name */}
               <div style={{ marginBottom: 22 }}>
                 <div style={{
-                  fontSize: 13, fontWeight: 600, color: "#475569",
+                  fontSize: 14, fontWeight: 600, color: "#475569",
                   textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
                   fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                 }}>
@@ -379,7 +388,7 @@ export default function T4Calculator() {
                   placeholder="e.g. Acme Construction Ltd."
                   style={{
                     width: "100%", padding: "12px 14px", borderRadius: 8,
-                    border: "2px solid #e2e8f0", fontSize: 15,
+                    border: "2px solid #e2e8f0", fontSize: 17,
                     fontFamily: "inherit", color: "#1c1917",
                     outline: "none", boxSizing: "border-box",
                     transition: "border-color 0.15s",
@@ -443,7 +452,7 @@ export default function T4Calculator() {
                     ? "linear-gradient(135deg, #b91c1c, #991b1b)"
                     : "#e2e8f0",
                   color: canCalculate ? "#fff" : "#94a3b8",
-                  fontSize: 16, fontWeight: 700, cursor: canCalculate ? "pointer" : "not-allowed",
+                  fontSize: 18, fontWeight: 700, cursor: canCalculate ? "pointer" : "not-allowed",
                   fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                   letterSpacing: "0.02em",
                   transition: "all 0.2s ease",
@@ -458,7 +467,7 @@ export default function T4Calculator() {
             <FadeIn>
               <div style={{ textAlign: "center" }}>
                 <div style={{
-                  fontSize: 13, color: "#78716c", textTransform: "uppercase",
+                  fontSize: 14, color: "#78716c", textTransform: "uppercase",
                   letterSpacing: "0.1em", marginBottom: 8,
                   fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                 }}>
@@ -466,22 +475,22 @@ export default function T4Calculator() {
                 </div>
                 <div style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  width: 96, height: 96, borderRadius: "50%",
+                  width: 100, height: 100, borderRadius: "50%",
                   background: `${CODES[code]?.color}12`,
                   border: `3px solid ${CODES[code]?.color}`,
                   marginBottom: 12,
                 }}>
                   <span style={{
-                    fontSize: 48, fontWeight: 800, color: CODES[code]?.color,
+                    fontSize: 52, fontWeight: 800, color: CODES[code]?.color,
                     fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                   }}>
                     {code}
                   </span>
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 600, color: "#1c1917", marginBottom: 4 }}>
+                <div style={{ fontSize: 20, fontWeight: 600, color: "#1c1917", marginBottom: 4 }}>
                   {CODES[code]?.label}
                 </div>
-                <div style={{ fontSize: 14, color: "#78716c", marginBottom: 24 }}>
+                <div style={{ fontSize: 15, color: "#78716c", marginBottom: 24 }}>
                   {CODES[code]?.desc}
                 </div>
 
@@ -495,22 +504,22 @@ export default function T4Calculator() {
                   <div style={{
                     display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
                   }}>
-                    <span style={{ fontSize: 18 }}>📋</span>
+                    <span style={{ fontSize: 20 }}>📋</span>
                     <span style={{
-                      fontSize: 14, fontWeight: 700, color: "#1c1917",
+                      fontSize: 16, fontWeight: 700, color: "#1c1917",
                       fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                     }}>
                       Compliance Memorandum
                     </span>
                   </div>
                   <p style={{
-                    fontSize: 13, color: "#57534e", lineHeight: 1.6, margin: "0 0 12px 0",
+                    fontSize: 15, color: "#57534e", lineHeight: 1.6, margin: "0 0 12px 0",
                   }}>
-                    <strong>CRA audits can happen up to 6 years after filing.</strong> Protect yourself with a
+                    <strong style={{ color: "#b91c1c" }}>CRA audits can happen up to 6 years after filing.</strong> Protect yourself with a
                     timestamped compliance record showing your determination logic, inputs, and legal basis.
                   </p>
                   <div style={{
-                    fontSize: 12, color: "#78716c", marginBottom: 16,
+                    fontSize: 14, color: "#78716c", marginBottom: 16,
                     paddingLeft: 12, borderLeft: "2px solid #d6d3d1",
                   }}>
                     ✓ Instant download (PDF)<br/>
@@ -522,13 +531,13 @@ export default function T4Calculator() {
                     onClick={handleDownloadPDF}
                     disabled={isProcessingPayment}
                     style={{
-                      width: "100%", padding: "14px", borderRadius: 8, border: "none",
+                      width: "100%", padding: "15px", borderRadius: 8, border: "none",
                       background: downloadReady
                         ? "#059669"
                         : isProcessingPayment
                         ? "#6b7280"
                         : "linear-gradient(135deg, #1c1917, #292524)",
-                      color: "#fff", fontSize: 14, fontWeight: 700,
+                      color: "#fff", fontSize: 16, fontWeight: 700,
                       cursor: isProcessingPayment ? "not-allowed" : "pointer",
                       fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                       letterSpacing: "0.02em",
@@ -545,7 +554,7 @@ export default function T4Calculator() {
                       : "📄 Download Audit Record — $9"}
                   </button>
                   <div style={{
-                    fontSize: 11, color: "#a8a29e", textAlign: "center", marginTop: 8,
+                    fontSize: 12, color: "#a8a29e", textAlign: "center", marginTop: 8,
                   }}>
                     {PAYMENT_ENABLED
                       ? "🔒 Secure payment via Stripe • No account required"
@@ -558,7 +567,7 @@ export default function T4Calculator() {
                   onClick={handleReset}
                   style={{
                     background: "none", border: "none", color: "#b91c1c",
-                    fontSize: 14, fontWeight: 600, cursor: "pointer",
+                    fontSize: 15, fontWeight: 600, cursor: "pointer",
                     fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                     padding: "8px 16px",
                   }}
@@ -574,23 +583,20 @@ export default function T4Calculator() {
         {!isEmbedMode && (
           <>
             <div style={{
-              textAlign: "center", marginTop: 24, fontSize: 12, color: "#a8a29e",
-              lineHeight: 1.6,
+              textAlign: "center", marginTop: 24, fontSize: 13, color: "#78716c",
+              lineHeight: 1.6, fontWeight: 500,
             }}>
               This is not a government or CRA website.{' '}
-              Owned and operated by{' '}
-              <a href="https://justack.ai" style={{ color: "#78716c", textDecoration: "underline" }}>
-                justack.ai
-              </a>
+              Owned and operated by Humilitas Group Limited.
             </div>
             <div style={{
-              textAlign: "center", marginTop: 10, fontSize: 15, color: "#a8a29e",
+              textAlign: "center", marginTop: 10, fontSize: 16, color: "#78716c",
             }}>
-              <a href="https://box45calculator.ca" style={{ color: "#78716c", textDecoration: "none", fontWeight: 600 }}>
+              <a href="https://box45calculator.ca" style={{ color: "#57534e", textDecoration: "none", fontWeight: 600 }}>
                 Box45Calculator.ca
               </a>
               <span style={{ margin: "0 8px" }}>·</span>
-              <a href="https://buymeacoffee.com/" style={{ color: "#78716c", textDecoration: "none" }}>
+              <a href="https://buymeacoffee.com/mjbryant66b" style={{ color: "#57534e", textDecoration: "none" }}>
                 ☕ Buy me a coffee
               </a>
             </div>

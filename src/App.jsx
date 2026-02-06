@@ -60,6 +60,14 @@ function FadeIn({ children, delay = 0 }) {
   );
 }
 
+function MapleLeaf({ size = 18, color = "#b91c1c" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 38" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <path fill={color} d="M20,2 L22,10 L28,6 L25,12 L32,13 L26.5,16.5 L30,22 L24,19 L25,28 L20,24 L15,28 L16,19 L10,22 L13.5,16.5 L8,13 L15,12 L12,6 L18,10 Z M17,28 L17,36 L23,36 L23,28"/>
+    </svg>
+  );
+}
+
 function DeadlineBanner() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
 
@@ -151,7 +159,7 @@ function DeadlineBanner() {
             </>
           )}
         </div>
-        <span style={{ fontSize: 20 }}>🍁</span>
+        <MapleLeaf size={20} color="#ffffff" />
       </div>
       <style>{`
         @keyframes pulse {
@@ -164,22 +172,28 @@ function DeadlineBanner() {
 }
 
 export default function T4Calculator() {
-  const [employerName, setEmployerName] = useState("");
-  const [offeredDental, setOfferedDental] = useState(null);
-  const [spouseEligible, setSpouseEligible] = useState(null);
-  const [childrenEligible, setChildrenEligible] = useState(null);
-  const [showResult, setShowResult] = useState(false);
-  const [downloadReady, setDownloadReady] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
   // Check for embed mode and payment status
   const urlParams = new URLSearchParams(window.location.search);
   const isEmbedMode = urlParams.get('embed') === 'true';
   const paymentSuccess = urlParams.get('payment') === 'success';
   const sessionId = urlParams.get('session_id');
 
-  // Payment feature flag - set to true to enable Stripe payments
-  const PAYMENT_ENABLED = true; // Stripe test mode enabled
+  // Restore calculator state from sessionStorage on payment return
+  const savedState = paymentSuccess ? (() => {
+    try { return JSON.parse(sessionStorage.getItem('t4-calculator-state')); }
+    catch { return null; }
+  })() : null;
+
+  const [employerName, setEmployerName] = useState(savedState?.employerName || "");
+  const [offeredDental, setOfferedDental] = useState(savedState?.offeredDental ?? null);
+  const [spouseEligible, setSpouseEligible] = useState(savedState?.spouseEligible ?? null);
+  const [childrenEligible, setChildrenEligible] = useState(savedState?.childrenEligible ?? null);
+  const [showResult, setShowResult] = useState(!!savedState);
+  const [downloadReady, setDownloadReady] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Payment feature flag
+  const PAYMENT_ENABLED = true;
 
   // Verify payment on return from Stripe
   useEffect(() => {
@@ -200,8 +214,18 @@ export default function T4Calculator() {
 
       if (data.paid) {
         setDownloadReady(true);
-        // You can restore state from sessionStorage if needed
-        alert('Payment successful! You can now download your compliance memorandum.');
+        // Auto-generate PDF using restored state from sessionStorage
+        const saved = JSON.parse(sessionStorage.getItem('t4-calculator-state') || 'null');
+        if (saved) {
+          generateCompliancePDF(
+            { employerName: saved.employerName, offeredDental: saved.offeredDental,
+              spouseEligible: saved.spouseEligible, childrenEligible: saved.childrenEligible },
+            saved.code
+          );
+          sessionStorage.removeItem('t4-calculator-state');
+          // Clean up URL params
+          window.history.replaceState({}, '', window.location.pathname);
+        }
       }
     } catch (error) {
       console.error('Payment verification error:', error);
@@ -295,7 +319,7 @@ export default function T4Calculator() {
               fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
               marginBottom: 16,
             }}>
-              <span>🍁</span> CRA Compliance Tool
+              <MapleLeaf size={14} color="#ffffff" /> CRA Compliance Tool
             </div>
             <h1 style={{
               fontSize: 28, fontWeight: 700, color: "#1c1917",
@@ -312,20 +336,20 @@ export default function T4Calculator() {
         {/* Deadline Banner - Seasonal */}
         <DeadlineBanner />
 
-        {/* Warning Banner */}
+        {/* Info Banner */}
         <div style={{
-          background: "#fffbeb", border: "1px solid #f59e0b",
+          background: "#eff6ff", border: "1px solid #93c5fd",
           borderRadius: 10, padding: "14px 18px", marginBottom: 24,
           display: "flex", gap: 12, alignItems: "flex-start",
         }}>
-          <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>⚠️</span>
+          <span style={{ fontSize: 18, lineHeight: 1.2, flexShrink: 0 }}>ℹ️</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 2,
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1e3a5f", marginBottom: 2,
               fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
             }}>
-              Critical Rule
+              Important Note
             </div>
-            <div style={{ fontSize: 13, color: "#78350f", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: "#1e40af", lineHeight: 1.5 }}>
               Report based on <strong>eligibility</strong> as of December 31, 2025 — not whether benefits were actually used.
             </div>
           </div>
@@ -548,17 +572,29 @@ export default function T4Calculator() {
 
         {/* Footer - Hide in embed mode */}
         {!isEmbedMode && (
-          <div style={{
-            textAlign: "center", marginTop: 24, fontSize: 12, color: "#a8a29e",
-          }}>
-            <a href="https://box45calculator.ca" style={{ color: "#78716c", textDecoration: "none", fontWeight: 600 }}>
-              Box45Calculator.ca
-            </a>
-            <span style={{ margin: "0 8px" }}>·</span>
-            <a href="https://buymeacoffee.com/" style={{ color: "#78716c", textDecoration: "none" }}>
-              ☕ Buy me a coffee
-            </a>
-          </div>
+          <>
+            <div style={{
+              textAlign: "center", marginTop: 24, fontSize: 12, color: "#a8a29e",
+              lineHeight: 1.6,
+            }}>
+              This is not a government or CRA website.{' '}
+              Owned and operated by{' '}
+              <a href="https://justack.ai" style={{ color: "#78716c", textDecoration: "underline" }}>
+                justack.ai
+              </a>
+            </div>
+            <div style={{
+              textAlign: "center", marginTop: 10, fontSize: 15, color: "#a8a29e",
+            }}>
+              <a href="https://box45calculator.ca" style={{ color: "#78716c", textDecoration: "none", fontWeight: 600 }}>
+                Box45Calculator.ca
+              </a>
+              <span style={{ margin: "0 8px" }}>·</span>
+              <a href="https://buymeacoffee.com/" style={{ color: "#78716c", textDecoration: "none" }}>
+                ☕ Buy me a coffee
+              </a>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,6 +1,14 @@
 // Vercel Serverless Function - Verify Stripe Payment
 import Stripe from 'stripe';
 
+export const config = {
+  maxDuration: 10,
+};
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  httpClient: Stripe.createFetchHttpClient(),
+});
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -18,7 +26,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { sessionId } = req.body;
 
     if (!sessionId) {

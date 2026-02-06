@@ -52,8 +52,8 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin || process.env.VERCEL_URL}?session_id={CHECKOUT_SESSION_ID}&payment=success`,
-      cancel_url: `${req.headers.origin || process.env.VERCEL_URL}?payment=cancelled`,
+      success_url: `${req.headers.origin || `https://${process.env.VERCEL_URL}`}?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+      cancel_url: `${req.headers.origin || `https://${process.env.VERCEL_URL}`}?payment=cancelled`,
       metadata: {
         code: code.toString(),
         employerName: employerName || 'Not provided',

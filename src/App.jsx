@@ -179,7 +179,7 @@ export default function T4Calculator() {
   const sessionId = urlParams.get('session_id');
 
   // Payment feature flag - set to true to enable Stripe payments
-  const PAYMENT_ENABLED = false; // Change to true when ready to accept payments
+  const PAYMENT_ENABLED = true; // Stripe test mode enabled
 
   // Verify payment on return from Stripe
   useEffect(() => {

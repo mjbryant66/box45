@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { generateCompliancePDF } from "./utils/generatePDF";
 
 const CODES = {
@@ -590,12 +591,17 @@ export default function T4Calculator() {
               Owned and operated by Humilitas Group Limited.
             </div>
             <div style={{
-              textAlign: "center", marginTop: 10, fontSize: 16, color: "#78716c",
+              textAlign: "center", marginTop: 10, fontSize: 15, color: "#78716c",
+              display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 4,
             }}>
-              <a href="https://box45calculator.ca" style={{ color: "#57534e", textDecoration: "none", fontWeight: 600 }}>
+              <Link to="/" style={{ color: "#57534e", textDecoration: "none", fontWeight: 600 }}>
                 Box45Calculator.ca
-              </a>
-              <span style={{ margin: "0 8px" }}>·</span>
+              </Link>
+              <span>·</span>
+              <Link to="/terms" style={{ color: "#57534e", textDecoration: "none" }}>Terms</Link>
+              <span>·</span>
+              <Link to="/privacy" style={{ color: "#57534e", textDecoration: "none" }}>Privacy</Link>
+              <span>·</span>
               <a href="https://buymeacoffee.com/mjbryant66b" style={{ color: "#57534e", textDecoration: "none" }}>
                 ☕ Buy me a coffee
               </a>

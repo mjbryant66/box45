@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { generateCompliancePDF } from "./utils/generatePDF";
+import CreditBalance from "./components/CreditBalance";
+import CreditPackSelector from "./components/CreditPackSelector";
+import ResendLinkForm from "./components/ResendLinkForm";
 
 const CODES = {
   1: { label: "Code 1", desc: "No dental benefits offered", color: "#64748b" },
@@ -182,64 +185,163 @@ function DeadlineBanner() {
 }
 
 export default function T4Calculator() {
-  // Check for embed mode and payment status
+  // Check for embed mode and URL params
   const urlParams = new URLSearchParams(window.location.search);
   const isEmbedMode = urlParams.get('embed') === 'true';
   const paymentSuccess = urlParams.get('payment') === 'success';
-  const sessionId = urlParams.get('session_id');
+  const magicToken = urlParams.get('magic');
 
-  // Restore calculator state from sessionStorage on payment return
-  const savedState = paymentSuccess ? (() => {
-    try { return JSON.parse(sessionStorage.getItem('t4-calculator-state')); }
-    catch { return null; }
-  })() : null;
-
-  const [employerName, setEmployerName] = useState(savedState?.employerName || "");
-  const [offeredDental, setOfferedDental] = useState(savedState?.offeredDental ?? null);
-  const [spouseEligible, setSpouseEligible] = useState(savedState?.spouseEligible ?? null);
-  const [childrenEligible, setChildrenEligible] = useState(savedState?.childrenEligible ?? null);
-  const [showResult, setShowResult] = useState(!!savedState);
+  // Calculator state
+  const [employerName, setEmployerName] = useState("");
+  const [offeredDental, setOfferedDental] = useState(null);
+  const [spouseEligible, setSpouseEligible] = useState(null);
+  const [childrenEligible, setChildrenEligible] = useState(null);
+  const [showResult, setShowResult] = useState(false);
   const [downloadReady, setDownloadReady] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Payment feature flag
-  const PAYMENT_ENABLED = true;
+  // Credit system state
+  const [walletEmail, setWalletEmail] = useState(() =>
+    localStorage.getItem('walletEmail') || ''
+  );
+  const [creditBalance, setCreditBalance] = useState(0);
+  const [isLoadingCredits, setIsLoadingCredits] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [showResendForm, setShowResendForm] = useState(false);
+  const [creditMessage, setCreditMessage] = useState('');
 
-  // Verify payment on return from Stripe
+  // Handle magic link on page load
   useEffect(() => {
-    if (paymentSuccess && sessionId && !downloadReady) {
-      verifyPayment(sessionId);
+    if (magicToken) {
+      restoreFromMagicLink(magicToken);
     }
-  }, [paymentSuccess, sessionId]);
+  }, [magicToken]);
 
-  const verifyPayment = async (sessionId) => {
+  // Handle payment return — fetch updated balance
+  useEffect(() => {
+    if (paymentSuccess && walletEmail) {
+      fetchBalance(walletEmail);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [paymentSuccess]);
+
+  // Fetch balance when email is known
+  useEffect(() => {
+    if (walletEmail) {
+      fetchBalance(walletEmail);
+    }
+  }, [walletEmail]);
+
+  const restoreFromMagicLink = async (token) => {
     try {
-      const response = await fetch('/api/verify-payment', {
+      const res = await fetch(`/api/restore-credits?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setWalletEmail(data.email);
+        setCreditBalance(data.credits);
+        localStorage.setItem('walletEmail', data.email);
+        setCreditMessage(`Welcome back! ${data.credits} credit${data.credits !== 1 ? 's' : ''} available.`);
+        setTimeout(() => setCreditMessage(''), 5000);
+      }
+    } catch (err) {
+      console.error('Magic link restore error:', err);
+    }
+    // Clean up URL
+    window.history.replaceState({}, '', window.location.pathname);
+  };
+
+  const fetchBalance = async (email) => {
+    try {
+      const res = await fetch(`/api/wallet?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      setCreditBalance(data.credits || 0);
+    } catch (err) {
+      console.error('Balance fetch error:', err);
+    }
+  };
+
+  const handlePurchasePack = async (packId, email) => {
+    setIsPurchasing(true);
+
+    try {
+      // Save state for after payment return
+      sessionStorage.setItem('t4-calculator-state', JSON.stringify({
+        employerName, offeredDental, spouseEligible, childrenEligible,
+        code: determineCode(),
+      }));
+
+      // Remember email
+      setWalletEmail(email);
+      localStorage.setItem('walletEmail', email);
+
+      const res = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ packId, email }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (data.paid) {
-        setDownloadReady(true);
-        // Auto-generate PDF using restored state from sessionStorage
-        const saved = JSON.parse(sessionStorage.getItem('t4-calculator-state') || 'null');
-        if (saved) {
-          generateCompliancePDF(
-            { employerName: saved.employerName, offeredDental: saved.offeredDental,
-              spouseEligible: saved.spouseEligible, childrenEligible: saved.childrenEligible },
-            saved.code
-          );
-          sessionStorage.removeItem('t4-calculator-state');
-          // Clean up URL params
-          window.history.replaceState({}, '', window.location.pathname);
-        }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      alert('There was an error verifying your payment. Please contact support.');
+    } catch (err) {
+      console.error('Checkout error:', err);
+      alert('There was an error processing your payment. Please try again.');
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const inputs = { employerName, offeredDental, spouseEligible, childrenEligible };
+
+    if (creditBalance > 0 && walletEmail) {
+      // Has credits — deduct and download
+      setIsLoadingCredits(true);
+      try {
+        const res = await fetch('/api/use-credit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: walletEmail }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          setCreditBalance(data.credits);
+          generateCompliancePDF(inputs, code);
+          setDownloadReady(true);
+        } else {
+          setCreditBalance(data.credits || 0);
+          alert('Insufficient credits. Please purchase more.');
+        }
+      } catch (err) {
+        console.error('Use credit error:', err);
+        alert('Error processing download. Please try again.');
+      }
+      setIsLoadingCredits(false);
+    }
+    // If no credits, the UI shows CreditPackSelector instead of this button
+  };
+
+  const handleResendLink = async () => {
+    if (!walletEmail) {
+      setShowResendForm(true);
+      return;
+    }
+
+    try {
+      await fetch('/api/resend-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: walletEmail }),
+      });
+      setCreditMessage('Access link sent to your email!');
+      setTimeout(() => setCreditMessage(''), 5000);
+    } catch (err) {
+      console.error('Resend link error:', err);
     }
   };
 
@@ -267,49 +369,6 @@ export default function T4Calculator() {
     setDownloadReady(false);
   };
 
-  const handleDownloadPDF = async () => {
-    const inputs = { employerName, offeredDental, spouseEligible, childrenEligible };
-
-    if (PAYMENT_ENABLED && !downloadReady) {
-      // Payment flow - redirect to Stripe Checkout
-      setIsProcessingPayment(true);
-
-      try {
-        // Save state to sessionStorage so we can restore after payment
-        sessionStorage.setItem('t4-calculator-state', JSON.stringify({
-          employerName,
-          offeredDental,
-          spouseEligible,
-          childrenEligible,
-          code,
-        }));
-
-        const response = await fetch('/api/create-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, employerName }),
-        });
-
-        const data = await response.json();
-
-        if (data.url) {
-          // Redirect to Stripe Checkout
-          window.location.href = data.url;
-        } else {
-          throw new Error('No checkout URL received');
-        }
-      } catch (error) {
-        console.error('Checkout error:', error);
-        alert('There was an error processing your payment. Please try again.');
-        setIsProcessingPayment(false);
-      }
-    } else {
-      // Free download (MVP mode) or post-payment download
-      generateCompliancePDF(inputs, code);
-      setDownloadReady(true);
-    }
-  };
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -322,14 +381,25 @@ export default function T4Calculator() {
         {!isEmbedMode && (
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              background: "#b91c1c", color: "#fff", padding: "6px 16px",
-              borderRadius: 6, fontSize: 13, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
-              marginBottom: 16,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 10, marginBottom: 16,
             }}>
-              <MapleLeaf size={16} color="#ffffff" /> CRA Compliance Tool
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                background: "#b91c1c", color: "#fff", padding: "6px 16px",
+                borderRadius: 6, fontSize: 13, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
+              }}>
+                <MapleLeaf size={16} color="#ffffff" /> CRA Compliance Tool
+              </div>
+              {walletEmail && (
+                <CreditBalance
+                  credits={creditBalance}
+                  email={walletEmail}
+                  onResendLink={handleResendLink}
+                />
+              )}
             </div>
             <h1 style={{
               fontSize: 32, fontWeight: 700, color: "#0f0e0d",
@@ -341,6 +411,19 @@ export default function T4Calculator() {
               Determine the correct dental benefits code for your T4 filings
             </p>
           </div>
+        )}
+
+        {/* Credit restored message */}
+        {creditMessage && (
+          <FadeIn>
+            <div style={{
+              background: '#f0fdf4', border: '1px solid #bbf7d0',
+              borderRadius: 10, padding: '12px 18px', marginBottom: 16,
+              fontSize: 14, color: '#166534', textAlign: 'center', fontWeight: 600,
+            }}>
+              {creditMessage}
+            </div>
+          </FadeIn>
         )}
 
         {/* Deadline Banner - Seasonal */}
@@ -495,7 +578,7 @@ export default function T4Calculator() {
                   {CODES[code]?.desc}
                 </div>
 
-                {/* Upsell Box */}
+                {/* Upsell / Download Box */}
                 <div style={{
                   background: "linear-gradient(135deg, #fafaf9, #f5f0eb)",
                   border: "1px solid #d6d3d1",
@@ -528,39 +611,48 @@ export default function T4Calculator() {
                     ✓ Unique record ID & timestamp<br/>
                     ✓ Legal disclaimer included
                   </div>
-                  <button
-                    onClick={handleDownloadPDF}
-                    disabled={isProcessingPayment}
-                    style={{
-                      width: "100%", padding: "15px", borderRadius: 8, border: "none",
-                      background: downloadReady
-                        ? "#059669"
-                        : isProcessingPayment
-                        ? "#6b7280"
-                        : "linear-gradient(135deg, #1c1917, #292524)",
-                      color: "#fff", fontSize: 16, fontWeight: 700,
-                      cursor: isProcessingPayment ? "not-allowed" : "pointer",
-                      fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
-                      letterSpacing: "0.02em",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    {isProcessingPayment
-                      ? "⏳ Redirecting to checkout..."
-                      : downloadReady
-                      ? "✓ Downloaded — Generate Another?"
-                      : PAYMENT_ENABLED
-                      ? "💳 Proceed to Checkout — $9 CAD"
-                      : "📄 Download Audit Record — $9"}
-                  </button>
-                  <div style={{
-                    fontSize: 12, color: "#a8a29e", textAlign: "center", marginTop: 8,
-                  }}>
-                    {PAYMENT_ENABLED
-                      ? "🔒 Secure payment via Stripe • No account required"
-                      : "⚡ Instant download • No signup required"}
-                  </div>
+
+                  {/* Credit-based download or pack selector */}
+                  {creditBalance > 0 && walletEmail ? (
+                    <>
+                      <button
+                        onClick={handleDownloadPDF}
+                        disabled={isLoadingCredits}
+                        style={{
+                          width: "100%", padding: "15px", borderRadius: 8, border: "none",
+                          background: downloadReady
+                            ? "#059669"
+                            : isLoadingCredits
+                            ? "#6b7280"
+                            : "linear-gradient(135deg, #1c1917, #292524)",
+                          color: "#fff", fontSize: 16, fontWeight: 700,
+                          cursor: isLoadingCredits ? "not-allowed" : "pointer",
+                          fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
+                          letterSpacing: "0.02em",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {isLoadingCredits
+                          ? "⏳ Processing..."
+                          : downloadReady
+                          ? "✓ Downloaded — Generate Another?"
+                          : `📄 Download PDF — 1 credit (${creditBalance} remaining)`
+                        }
+                      </button>
+                      <div style={{
+                        fontSize: 12, color: "#a8a29e", textAlign: "center", marginTop: 8,
+                      }}>
+                        ⚡ Instant download • 1 credit per PDF
+                      </div>
+                    </>
+                  ) : (
+                    <CreditPackSelector
+                      onSelectPack={handlePurchasePack}
+                      loading={isPurchasing}
+                      email={walletEmail}
+                    />
+                  )}
                 </div>
 
                 {/* Reset */}
@@ -579,6 +671,27 @@ export default function T4Calculator() {
             </FadeIn>
           )}
         </div>
+
+        {/* Resend Link Form */}
+        {showResendForm && !walletEmail && (
+          <ResendLinkForm onClose={() => setShowResendForm(false)} />
+        )}
+
+        {/* Already have credits? Link */}
+        {!walletEmail && !showResendForm && (
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <button
+              onClick={() => setShowResendForm(true)}
+              style={{
+                background: "none", border: "none", color: "#78716c",
+                fontSize: 14, cursor: "pointer", textDecoration: "underline",
+                fontFamily: "'Trebuchet MS', sans-serif",
+              }}
+            >
+              Already purchased credits? Access them here
+            </button>
+          </div>
+        )}
 
         {/* Footer - Hide in embed mode */}
         {!isEmbedMode && (

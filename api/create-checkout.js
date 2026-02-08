@@ -1,5 +1,7 @@
 // Vercel Serverless Function - Create Stripe Checkout Session
+// Supports credit pack purchases: single ($9/1cr), ten ($29/10cr), twentyfive ($59/25cr)
 import Stripe from 'stripe';
+import { CREDIT_PACKS } from '../lib/kv.js';
 
 export const config = {
   maxDuration: 10,
@@ -26,37 +28,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { code, employerName } = req.body;
+    const { packId, email } = req.body;
 
-    if (!code) {
-      return res.status(400).json({ error: 'Code is required' });
+    // Validate pack
+    const pack = CREDIT_PACKS[packId];
+    if (!pack) {
+      return res.status(400).json({
+        error: 'Invalid pack. Use: single, ten, or twentyfive',
+      });
     }
 
-    // Create checkout session
+    const origin = req.headers.origin || `https://${process.env.VERCEL_URL}`;
+
+    // Create checkout session for credit pack
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
+      customer_email: email || undefined,
       line_items: [
         {
           price_data: {
             currency: 'cad',
             product_data: {
-              name: `T4 Box 45 Compliance Memorandum - Code ${code}`,
-              description: employerName
-                ? `Audit record for ${employerName}`
-                : 'Professional compliance memorandum with timestamp and legal basis',
-              images: ['https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400'],
+              name: `Box45 ${pack.stripeName}`,
+              description: `${pack.credits} PDF download credit${pack.credits > 1 ? 's' : ''} for T4 Box 45 Compliance Memorandums`,
             },
-            unit_amount: 900, // $9.00 CAD in cents
+            unit_amount: pack.priceCAD,
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin || `https://${process.env.VERCEL_URL}`}?session_id={CHECKOUT_SESSION_ID}&payment=success`,
-      cancel_url: `${req.headers.origin || `https://${process.env.VERCEL_URL}`}?payment=cancelled`,
+      success_url: `${origin}?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+      cancel_url: `${origin}?payment=cancelled`,
       metadata: {
-        code: code.toString(),
-        employerName: employerName || 'Not provided',
+        packId,
+        credits: pack.credits.toString(),
+        email: email || '',
       },
     });
 

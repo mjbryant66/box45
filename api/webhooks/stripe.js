@@ -100,14 +100,21 @@ export default async function handler(req, res) {
     const wallet = await addCredits(email, credits, session.id);
     console.log(`Added ${credits} credits to ${email}. New balance: ${wallet.credits}`);
 
-    // --- Mark processed (idempotency) ---
+    // --- Mark processed BEFORE email (idempotency) ---
+    // Must happen before email send so Stripe retries on email failure
+    // don't duplicate credits
     await markProcessed(session.id);
 
     // --- Generate magic link and send confirmation email ---
-    const token = generateMagicToken(email);
-    await storeMagicLink(token, email);
-    await sendPurchaseConfirmationEmail(email, credits, token);
-    console.log(`Confirmation email sent to ${email}`);
+    try {
+      const token = generateMagicToken(email);
+      await storeMagicLink(token, email);
+      await sendPurchaseConfirmationEmail(email, credits, token);
+      console.log(`Confirmation email sent to ${email}`);
+    } catch (emailError) {
+      // Email failure is non-fatal — credits already granted and session marked processed
+      console.error(`Email send failed for ${email}:`, emailError.message);
+    }
 
     return res.status(200).json({ received: true, credits, email });
   } catch (error) {

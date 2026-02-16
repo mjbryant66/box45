@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      success_url: `${origin}?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+      success_url: `${origin}?session_id={CHECKOUT_SESSION_ID}&payment=success&amt=${(pack.priceCAD / 100).toFixed(2)}`,
       cancel_url: `${origin}?payment=cancelled`,
       metadata: {
         packId,

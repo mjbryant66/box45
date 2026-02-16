@@ -24,7 +24,7 @@ export default function ResendLinkForm({ onClose }) {
       setStatus('sent');
     } catch (err) {
       setStatus('error');
-      setErrorMsg('Something went wrong. Please try again.');
+      setErrorMsg('We couldn\u2019t find a purchase for that email. Double-check the email used at checkout and try again.');
     }
   };
 
@@ -42,7 +42,7 @@ export default function ResendLinkForm({ onClose }) {
           fontSize: 15, fontWeight: 700, color: '#1c1917',
           fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
         }}>
-          Access Your Credits
+          Need access on another device?
         </div>
         {onClose && (
           <button
@@ -58,7 +58,7 @@ export default function ResendLinkForm({ onClose }) {
       </div>
 
       <p style={{ fontSize: 14, color: '#57534e', lineHeight: 1.5, margin: '0 0 14px' }}>
-        Enter the email you used to purchase credits. We'll send you a link to access them on this device.
+        Enter the email used at checkout and we'll send your access link.
       </p>
 
       {status === 'sent' ? (
@@ -67,7 +67,7 @@ export default function ResendLinkForm({ onClose }) {
           borderRadius: 8, padding: '14px 16px',
           fontSize: 14, color: '#166534', textAlign: 'center',
         }}>
-          ✓ Access link sent! Check your email.
+          Access link sent. Please check your inbox.
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -76,7 +76,7 @@ export default function ResendLinkForm({ onClose }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder="you@company.ca"
               required
               style={{
                 flex: 1, padding: '11px 14px', borderRadius: 8,
@@ -101,7 +101,7 @@ export default function ResendLinkForm({ onClose }) {
                 whiteSpace: 'nowrap',
               }}
             >
-              {status === 'sending' ? '...' : 'Send Link'}
+              {status === 'sending' ? '...' : 'Send my access link'}
             </button>
           </div>
           {errorMsg && (

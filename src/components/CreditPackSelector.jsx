@@ -6,8 +6,8 @@ const PACKS = [
     credits: 1,
     price: '$9',
     priceNum: 9,
-    label: '1 Credit',
-    desc: 'Single PDF download',
+    label: 'Single PDF',
+    desc: '1 workpaper record (1 credit)',
     badge: null,
   },
   {
@@ -15,18 +15,18 @@ const PACKS = [
     credits: 10,
     price: '$29',
     priceNum: 29,
-    label: '10 Credits',
-    desc: '$2.90 each — save 68%',
-    badge: 'POPULAR',
+    label: '10-Pack',
+    desc: '10 workpaper records (10 credits)',
+    badge: 'MOST POPULAR',
   },
   {
     id: 'twentyfive',
     credits: 25,
     price: '$59',
     priceNum: 59,
-    label: '25 Credits',
-    desc: '$2.36 each — save 74%',
-    badge: 'BEST VALUE',
+    label: '25-Pack',
+    desc: '25 workpaper records (25 credits)',
+    badge: 'BEST FOR BOOKKEEPERS',
   },
 ];
 
@@ -146,7 +146,7 @@ export default function CreditPackSelector({ onSelectPack, loading, email }) {
       <div style={{
         fontSize: 12, color: '#a8a29e', textAlign: 'center', marginTop: 8,
       }}>
-        🔒 Secure payment via Stripe • Credits never expire
+        One-time purchase. No subscription.
       </div>
     </div>
   );

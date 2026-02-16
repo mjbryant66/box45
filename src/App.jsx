@@ -219,8 +219,25 @@ export default function T4Calculator() {
   // Handle payment return — fetch updated balance
   useEffect(() => {
     if (paymentSuccess && walletEmail) {
+      // Fire Google Ads conversion event BEFORE clearing URL params
+      // Google Ads Purchase conversion — ID: 980021396, Label: pRYnCPqw5PkbEJThp9MD
+      if (typeof gtag === 'function') {
+        const convValue = parseFloat(urlParams.get('amt')) || 9.00;
+        gtag('event', 'conversion', {
+          'send_to': 'AW-980021396/pRYnCPqw5PkbEJThp9MD',
+          'value': convValue,
+          'currency': 'CAD',
+        });
+      }
+      setCreditMessage('Payment received. We\u2019re attaching your credits now \u2014 this usually takes a few seconds.');
       fetchBalance(walletEmail);
       window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => setCreditMessage(''), 8000);
+    }
+    if (urlParams.get('payment') === 'canceled') {
+      setCreditMessage('Checkout wasn\u2019t completed. Your code result is still available. You can try again anytime.');
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => setCreditMessage(''), 8000);
     }
   }, [paymentSuccess]);
 
@@ -319,7 +336,7 @@ export default function T4Calculator() {
         }
       } catch (err) {
         console.error('Use credit error:', err);
-        alert('Error processing download. Please try again.');
+        alert('We couldn\u2019t generate the PDF right now. Please try again. If this keeps happening, contact support.');
       }
       setIsLoadingCredits(false);
     }
@@ -391,7 +408,7 @@ export default function T4Calculator() {
                 letterSpacing: "0.1em", textTransform: "uppercase",
                 fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
               }}>
-                <MapleLeaf size={16} color="#ffffff" /> CRA Compliance Tool
+                <MapleLeaf size={16} color="#ffffff" /> CRA compliance helper (not affiliated with CRA)
               </div>
               {walletEmail && (
                 <CreditBalance
@@ -405,10 +422,13 @@ export default function T4Calculator() {
               fontSize: 32, fontWeight: 700, color: "#0f0e0d",
               margin: "0 0 8px 0", lineHeight: 1.2,
             }}>
-              T4 Box 45 Calculator
+              T4 Box 45 Dental Benefits Code — Get the right code fast
             </h1>
             <p style={{ fontSize: 17, color: "#57534e", margin: 0, lineHeight: 1.5 }}>
-              Determine the correct dental benefits code for your T4 filings
+              Answer a few questions and we'll return the correct Box 45 code for your T4 slip, based on eligibility as of December 31, 2025.
+            </p>
+            <p style={{ fontSize: 13, color: "#78716c", margin: "8px 0 0 0", lineHeight: 1.5 }}>
+              No SINs. No CRA login. Not affiliated with CRA. Your data is never used to train AI.
             </p>
           </div>
         )}
@@ -440,10 +460,10 @@ export default function T4Calculator() {
             <div style={{ fontWeight: 700, fontSize: 14, color: "#1e3a5f", marginBottom: 2,
               fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
             }}>
-              Important Note
+              Important (CRA rule)
             </div>
             <div style={{ fontSize: 14, color: "#1e40af", lineHeight: 1.5 }}>
-              Report based on <strong>eligibility</strong> as of December 31, 2025 — not whether benefits were actually used.
+              Report Box 45 based on <strong>eligibility</strong> as of December 31, 2025 — not whether dental benefits were actually used.
             </div>
           </div>
         </div>
@@ -463,13 +483,13 @@ export default function T4Calculator() {
                   textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
                   fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                 }}>
-                  Employer / Business Name
+                  Employer / business name
                 </div>
                 <input
                   type="text"
                   value={employerName}
                   onChange={(e) => setEmployerName(e.target.value)}
-                  placeholder="e.g. Acme Construction Ltd."
+                  placeholder="e.g., Acme Construction Ltd."
                   style={{
                     width: "100%", padding: "12px 14px", borderRadius: 8,
                     border: "2px solid #e2e8f0", fontSize: 17,
@@ -480,19 +500,22 @@ export default function T4Calculator() {
                   onFocus={(e) => e.target.style.borderColor = "#b91c1c"}
                   onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
                 />
+                <div style={{ fontSize: 12, color: "#a8a29e", marginTop: 6, lineHeight: 1.4 }}>
+                  Used to label your workpaper record. We don't ask for SINs or CRA login details.
+                </div>
               </div>
 
               {/* Question 1 */}
               <RadioGroup
-                label="Did you offer dental benefits to this employee?"
+                label="Did this employee have access to dental coverage at any point in 2025?"
                 value={offeredDental}
                 onChange={(v) => {
                   setOfferedDental(v);
                   if (v === false) { setSpouseEligible(null); setChildrenEligible(null); }
                 }}
                 options={[
-                  { label: "Yes, we offered dental", value: true },
-                  { label: "No dental offered", value: false },
+                  { label: "Yes — dental coverage was offered", value: true },
+                  { label: "No — no dental coverage was offered", value: false },
                 ]}
               />
 
@@ -543,8 +566,13 @@ export default function T4Calculator() {
                   boxShadow: canCalculate ? "0 4px 12px rgba(185,28,28,0.25)" : "none",
                 }}
               >
-                Determine Code →
+                Get my Box 45 code →
               </button>
+              <div style={{
+                fontSize: 12, color: "#a8a29e", textAlign: "center", marginTop: 10, lineHeight: 1.4,
+              }}>
+                You'll get the code result free. PDF workpaper records are optional.
+              </div>
             </>
           ) : (
             /* Result View */
@@ -555,7 +583,7 @@ export default function T4Calculator() {
                   letterSpacing: "0.1em", marginBottom: 8,
                   fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                 }}>
-                  Your T4 Box 45 Code
+                  Your T4 Box 45 code
                 </div>
                 <div style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -574,8 +602,11 @@ export default function T4Calculator() {
                 <div style={{ fontSize: 20, fontWeight: 600, color: "#1c1917", marginBottom: 4 }}>
                   {CODES[code]?.label}
                 </div>
-                <div style={{ fontSize: 15, color: "#78716c", marginBottom: 24 }}>
+                <div style={{ fontSize: 15, color: "#78716c", marginBottom: 8 }}>
                   {CODES[code]?.desc}
+                </div>
+                <div style={{ fontSize: 13, color: "#a8a29e", marginBottom: 24 }}>
+                  Based on eligibility as of December 31, 2025.
                 </div>
 
                 {/* Upsell / Download Box */}
@@ -593,23 +624,22 @@ export default function T4Calculator() {
                       fontSize: 16, fontWeight: 700, color: "#1c1917",
                       fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
                     }}>
-                      Compliance Memorandum
+                      Need a workpaper record for your files?
                     </span>
                   </div>
                   <p style={{
                     fontSize: 15, color: "#57534e", lineHeight: 1.6, margin: "0 0 12px 0",
                   }}>
-                    <strong style={{ color: "#b91c1c" }}>CRA audits can happen up to 6 years after filing.</strong> Protect yourself with a
-                    timestamped compliance record showing your determination logic, inputs, and legal basis.
+                    Download a timestamped PDF showing your selections and the returned code.
                   </p>
                   <div style={{
                     fontSize: 14, color: "#78716c", marginBottom: 16,
                     paddingLeft: 12, borderLeft: "2px solid #d6d3d1",
                   }}>
-                    ✓ Instant download (PDF)<br/>
-                    ✓ Audit-ready documentation<br/>
-                    ✓ Unique record ID & timestamp<br/>
-                    ✓ Legal disclaimer included
+                    ✓ Employer/business name<br/>
+                    ✓ Your selections (inputs) and returned Box 45 code<br/>
+                    ✓ Timestamp and unique record ID<br/>
+                    ✓ Reference note: eligibility as of December 31, 2025
                   </div>
 
                   {/* Credit-based download or pack selector */}
@@ -637,13 +667,13 @@ export default function T4Calculator() {
                           ? "⏳ Processing..."
                           : downloadReady
                           ? "✓ Downloaded — Generate Another?"
-                          : `📄 Download PDF — 1 credit (${creditBalance} remaining)`
+                          : "📄 Download workpaper PDF (uses 1 credit)"
                         }
                       </button>
                       <div style={{
                         fontSize: 12, color: "#a8a29e", textAlign: "center", marginTop: 8,
                       }}>
-                        ⚡ Instant download • 1 credit per PDF
+                        Each PDF download uses 1 credit.
                       </div>
                     </>
                   ) : (
@@ -700,24 +730,23 @@ export default function T4Calculator() {
               textAlign: "center", marginTop: 24, fontSize: 13, color: "#78716c",
               lineHeight: 1.6, fontWeight: 500,
             }}>
-              This is not a government or CRA website.{' '}
-              Owned and operated by Humilitas Group Limited.
+              This tool is not a Government of Canada or CRA website and is not affiliated with CRA. Owned and operated by Humilitas Group Limited.
             </div>
             <div style={{
               textAlign: "center", marginTop: 10, fontSize: 15, color: "#78716c",
               display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 4,
             }}>
-              <Link to="/" style={{ color: "#57534e", textDecoration: "none", fontWeight: 600 }}>
-                Box45Calculator.ca
-              </Link>
-              <span>·</span>
               <Link to="/terms" style={{ color: "#57534e", textDecoration: "none" }}>Terms</Link>
               <span>·</span>
               <Link to="/privacy" style={{ color: "#57534e", textDecoration: "none" }}>Privacy</Link>
               <span>·</span>
-              <a href="https://buymeacoffee.com/mjbryant66b" style={{ color: "#57534e", textDecoration: "none" }}>
-                ☕ Buy me a coffee
-              </a>
+              <a href="mailto:support@box45calculator.ca" style={{ color: "#57534e", textDecoration: "none" }}>Contact</a>
+            </div>
+            <div style={{
+              textAlign: "center", marginTop: 8, fontSize: 12, color: "#a8a29e",
+              lineHeight: 1.5,
+            }}>
+              We do not collect SINs or CRA login details. Your data is never used to train AI.
             </div>
           </>
         )}
